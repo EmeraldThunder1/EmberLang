@@ -38,13 +38,13 @@ class Stage:
             "costumes": [
                 {
                     "assetId": "cd21514d0531fdffb22204e0ec5ed84a",
-                    "name": "backdrop1",
+                    "name": "costume1",
                     "md5ext": "cd21514d0531fdffb22204e0ec5ed84a.svg",
                     "dataFormat": "svg",
                     "rotationCenterX": 240,
                     "rotationCenterY": 180
                 }
-            ],
+            ] if len(self.costumes) == 0 else [costume.json_constructor() for costume in self.costumes],
             "sounds": [],
             "comments": {},
             "blocks": {
@@ -101,7 +101,7 @@ class Sprite:
                     "rotationCenterX": 240,
                     "rotationCenterY": 180
                 }
-            ],
+            ] if len(self.costumes) == 0 else [costume.json_constructor() for costume in self.costumes],
             "sounds": [],
             "comments": {},
             "currentCostume": self.currentCostume,
@@ -266,6 +266,27 @@ class Field:
             self.value,
             self.links
         ]
+
+class InputRaw:
+    def __init__(self, value, _type, isShadow, dataType):
+        self.value = value
+        self.type = _type
+        self.isShadow = isShadow
+        self.dataType = dataType
+
+class Input():
+    def __init__(self,  name, values):
+        self.name = name
+        self.values = values # List of InputRaw objects in the order they are in the block
+
+        self.i_type = None
+
+        if self.value[-1].type == "shadow":
+            self.i_type = 1
+        elif "shadow" in [i.value for i in self.value]:
+            self.i_type = 3
+        else:
+            self.i_type = 2
         
 def new_id():
     global id

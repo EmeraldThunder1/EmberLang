@@ -1,3 +1,6 @@
+import src.errors
+from tokens import *
+
 opcodes = {
     "events": {
         "on_flag": {
@@ -294,7 +297,7 @@ opcodes = {
         },
         "set_costume": {
             "opcode": "ember_override_function",
-            "override": None,  # TODO: Implement function overrides
+            "override": "set_costume",
             "inputs": [
                 {
                     "type": "shadow",
@@ -633,22 +636,23 @@ def filter_fields(field, value, current, backdrop, sprites):
 
     match field:
         case "KEY_OPTION":
-            if value.isalpha() or value.isdigit() or value in ["any", "space", "up arrow", "left arrow", "down arrow", "right arrow"]:
+            if (len(value.value) == 1 and (value.type == STRING or value.type == NUMBER)) or value.value in ["any", "space", "up arrow", "left arrow", "down arrow", "right arrow"]:
                 return value, None
 
         case "BACKDROP":
             for costume in backdrop.costumes:
-                if costume.name == value:
+                if costume.name == value.value:
                     return value, None
 
         case "WHENGREATERTHANMENU":
-            if value.lower() in ["loudness", "timer"]:
-                return value.upper(), None
+            if value.value.lower() in ["loudness", "timer"]:
+                value.value = value.value.upper()
+                return value, None
 
         case "BROADCAST_OPTION":
             for obj in objects:
                 for broadcast in obj.broadcasts:
-                    if broadcast.name == value:
+                    if broadcast.name == value.value:
                         return value, None
 
         case "VARIABLE":
@@ -660,50 +664,75 @@ def filter_fields(field, value, current, backdrop, sprites):
         case "LIST":
             for obj in active:
                 for lst in obj.lists:
-                    if lst.name == value:
+                    if lst.name == value.value:
                         return value, lst.id
 
         case "EFFECT":
-            if value.lower() in ["color", "fisheye", "whirl", "pixelate", "mosaic"]:
-                return value.upper(), None
-            elif value.lower() in ["pitch", "pan"]:
-                return value.upper(), None
+            value.value = value.value.upper()
+            if value.value.lower() in ["color", "fisheye", "whirl", "pixelate", "mosaic"]:
+                return value, None
+            elif value.value.lower() in ["pitch", "pan"]:
+                return value, None
 
         case "STYLE":
-            if value.lower() in ["left-right", "all-around", "no-rotate"]:
-                if value == "all-around":
-                    return "all around", None
-                elif value == "no-rotate":
-                    return "don't rotate", None
+            if value.value.lower() in ["left-right", "all-around", "no-rotate"]:
+                if value.value == "all-around":
+                    return Token(value.type, "all around"), None
+                elif value.value == "no-rotate":
+                    return Token(value.type, "don't rotate"), None
                 else:
                     return value, None
 
         case "FRONT_BACK":
-            if value.lower() in ["front", "back"]:
-                return value.lower(), None
+            if value.value.lower() in ["front", "back"]:
+                value.value = value.value.lower()
+                return value, None
 
         case "FORWARD_BACKWARD":
-            if value.lower() in ["forward", "backward"]:
-                return value.lower(), None
+            if value.value.lower() in ["forward", "backward"]:
+                value.value = value.value.lower()
+                return value, None
 
         case "TO":
-            if value in ["random", "mouse"]:
-                return f"_{value}_", None
+            if value.value in ["random", "mouse"]:
+                return Token(value.type, f"_{value.value}_"), None
 
         case "TOWARDS":
-            if value in ["mouse"]:
-                return f"_{value}_", None
+            if value.value in ["mouse"]:
+                return Token(value.type, f"_{value.value}_"), None
 
         case "BROADCAST_OPTION":
             for obj in objects:
-                if value == obj.name:
-                    return obj.name, obj.id
+                if value.value == obj.name:
+                    return value, obj.id
 
         case "DRAG_MODE":
-            if value in ["draggable", "not_draggable"]:
-                return value.replace("_", " "), None
+            if value.value.lower() in ["draggable", "not_draggable"]:
+                value.value = value.value.replace("_", " ")
+                return value, None
 
     return None, None
 
 
 # TODO: Filter for inputs
+
+def filter_inputs(_i, value, current, backdrop, sprites):
+    active = [current, backdrop]
+    objects = sprites + active
+
+    match _i:
+        case "VALUE" | "X" | "Y" | "STEPS" | "SECS" | "DX" | "DY" | "CHANGE" | "SIZE" | "NUM" | "VOLUME" | "DURATION":
+            if value.type == NUMBER:
+                return value
+
+        case "DEGREES" | "DIRECTION":
+            if value.type == NUMBER:
+                if int(value.value) >= 0 and int(value.value) <= 360:
+                    return value
+
+        case "MESSAGE" | "QUESTION":
+            if value.type in [STRING, NUMBER]:
+                return value
+
+
+    return None

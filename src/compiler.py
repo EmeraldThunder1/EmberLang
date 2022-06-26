@@ -1,4 +1,3 @@
-from ast import parse
 import json
 
 from src.tokens import *
@@ -113,6 +112,42 @@ class Compiler:
 
                     else:
                         raise(SyntaxError("Expected variable name"))
+
+                elif self.tokens[self.idx].value == "set_costume":
+                    self.idx += 1
+
+                    if not self.reachedEnd():
+                        params = self.parse_parameters()
+
+                        if not len(params) == 1:
+                            raise SyntaxError("Function set costume expects one parameter")
+
+                        img_file = params[0].value
+
+                        costume = Costume(img_file)
+
+                        if self.get_last_object() == 'stage':
+                            costume.save_file(self.out)
+                            backdrop.costumes.append(costume)
+                        elif current_sprite:
+                            costume.save_file(self.out)
+                            current_sprite.costumes.append(costume)
+
+                        # Create block that sets the costume and append it onto event stack
+ 
+                        block = Block('looks_switchcostumeto', self.next_id())
+                        if self.get_last_object() == 'stage':
+                            prev_block = backdrop.blocks[-1]
+                        else:
+                            prev_block = current_sprite.blocks[-1]
+
+                        prev_block.next = block.id
+                        block.parent = prev_block.id
+
+                        if self.get_last_object() == 'stage':
+                            backdrop.blocks.append(block)
+                        else:
+                            current_sprite.blocks.append(block)
                 
                 else:
                     # Command is being called
@@ -163,43 +198,7 @@ class Compiler:
 
 
                     
-                # TODO: Attach block to stack to set variable
-
-                if self.tokens[self.idx].value == "set_costume":
-                    self.idx += 1
-
-                    if not self.reachedEnd():
-                        params = self.parse_parameters()
-
-                        if not len(params) == 1:
-                            raise SyntaxError("Function set costume expects one parameter")
-
-                        img_file = params[0]
-
-                        costume = Costume(img_file)
-
-                        if self.get_last_object() == 'stage':
-                            costume.save_file(self.out)
-                            backdrop.costumes.append(costume)
-                        elif current_sprite:
-                            costume.save_file(self.out)
-                            current_sprite.costumes.append(costume)
-
-                        # Create block that sets the costume and append it onto event stack
- 
-                        block = Block('looks_switchcostumeto', self.next_id())
-                        if self.get_last_object() == 'stage':
-                            prev_block = backdrop.blocks[-1]
-                        else:
-                            prev_block = current_sprite.blocks[-1]
-
-                        prev_block.next = block.id
-                        block.parent = prev_block.id
-
-                        if self.get_last_object() == 'stage':
-                            backdrop.blocks.append(block)
-                        else:
-                            current_sprite.blocks.append(block)
+                # TODO: Attach block to stack to set variable                    
 
 
             elif self.tokens[self.idx].type == CLOSE_BRACE:
@@ -273,7 +272,7 @@ class Compiler:
                     raise SyntaxError("Unclosed parentheses")
 
                 if prev:
-                    param = self.tokens[self.idx].value
+                    param = self.tokens[self.idx]
                     prev = not prev
 
                     params.append(param)

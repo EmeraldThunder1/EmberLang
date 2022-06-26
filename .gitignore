@@ -2,3 +2,4 @@
 addons
 test.ember
 out
+!src/addons

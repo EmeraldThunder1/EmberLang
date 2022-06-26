@@ -21,3 +21,6 @@ class ScopeError(Exception):
 
 class UndefinedError(Exception):
     pass
+
+class NumberError(Exception):
+    pass
