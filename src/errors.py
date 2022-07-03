@@ -24,3 +24,6 @@ class UndefinedError(Exception):
 
 class NumberError(Exception):
     pass
+
+class ParameterError(Exception):
+    pass

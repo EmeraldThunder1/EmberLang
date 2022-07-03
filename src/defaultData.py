@@ -5,7 +5,10 @@ import hashlib
 import shutil
 import os
 
+from src.tokens import *
+
 id = 0
+
 
 class Stage:
     def __init__(self):
@@ -14,6 +17,7 @@ class Stage:
         self.lists = []
         self.broadcasts = []
         self.blocks = []
+        self.shadows = []
         self.costumes = []
         self.sounds = []
         self.currentCostume = 0
@@ -48,7 +52,7 @@ class Stage:
             "sounds": [],
             "comments": {},
             "blocks": {
-                block.id: block.json_constructor() for block in self.blocks
+                block.id: block.json_constructor() for block in self.blocks + self.shadows
             },
             "currentCostume": self.currentCostume,
             "volume": 100,
@@ -59,6 +63,7 @@ class Stage:
             "textToSpeechLanguage": self.textToSpeechLanguage
         }
 
+
 class Sprite:
     def __init__(self, name):
         self.name = name
@@ -66,6 +71,7 @@ class Sprite:
         self.lists = []
         self.broadcasts = []
         self.blocks = []
+        self.shadows = []
         self.costumes = []
         self.sounds = []
         self.currentCostume = 0
@@ -90,7 +96,7 @@ class Sprite:
                 broadcast.id: broadcast.json_constructor() for broadcast in self.broadcasts
             },
             "blocks": {
-                block.id: block.json_constructor() for block in self.blocks
+                block.id: block.json_constructor() for block in self.blocks + self.shadows
             },
             "costumes": [
                 {
@@ -115,7 +121,8 @@ class Sprite:
             "draggle": self.draggle,
             "rotationStyle": self.rotationStyle
         }
-        
+
+
 class Variable:
     def __init__(self, name, value, id):
         self.name = name
@@ -128,8 +135,10 @@ class Variable:
             self.value
         ]
 
+
 class List:
-    pass # TODO:
+    pass  # TODO:
+
 
 class Broadcast:
     def __init__(self, name, id):
@@ -138,7 +147,7 @@ class Broadcast:
 
     def json_constructor(self):
         return self.name
-        
+
 
 class Costume:
     def __init__(self, path):
@@ -151,7 +160,8 @@ class Costume:
         self.rotationCenterY = 0
 
         if os.path.getsize(path) > (10 * (1024 ** 2)):
-            print(f"[WARN] File \"{self.name}.{self.dataFormat}\" is too big for the scratch website")
+            print(
+                f"[WARN] File \"{self.name}.{self.dataFormat}\" is too big for the scratch website")
 
     def generate_md5(self):
         with open(self.path, 'rb') as f:
@@ -172,6 +182,7 @@ class Costume:
             "rotationCenterY": self.rotationCenterY
         }
 
+
 class Sound:
     def __init__(self, path):
         self.path = path
@@ -184,15 +195,14 @@ class Sound:
         self.sampleCount = 1124
 
         if os.path.getsize(path) > (10 * (1024 ** 2)):
-            print(f"[WARN] File \"{self.name}.{self.dataFormat}\" is too big for the scratch website")
+            print(
+                f"[WARN] File \"{self.name}.{self.dataFormat}\" is too big for the scratch website")
 
     def generate_md5(self):
         with open(self.path, 'rb') as f:
             md5 = hashlib.md5(f.read()).hexdigest()
 
         return md5
-        
-
 
     def json_constructor(self):
         return {
@@ -226,17 +236,21 @@ class Project:
             }
         }
 
+
 class Block:
-    def __init__(self, opcode, id):
+    def __init__(self, opcode, id, c, scope):
         self.opcode = opcode
         self.next = None
         self.parent = None
-        self.inputs = {}
-        self.fields = {}
+        self.inputs = []
+        self.fields = []
         self.shadow = False
         self.x = 0
         self.y = 0
         self.id = id
+        self.category = None
+        self.c = c
+        self.scope = scope
 
     def json_constructor(self):
         return {
@@ -255,6 +269,7 @@ class Block:
             "y": self.y
         }
 
+
 class Field:
     def __init__(self, name, value, links):
         self.name = name
@@ -267,27 +282,65 @@ class Field:
             self.links
         ]
 
+
 class InputRaw:
-    def __init__(self, value, _type, isShadow, dataType):
+    def __init__(self, value, _type, rawType, useLink, usesSubstack=False):
         self.value = value
         self.type = _type
-        self.isShadow = isShadow
-        self.dataType = dataType
+        self.useLink = useLink
+        self.rawType = rawType
+        self.usesSubstack = usesSubstack
+
+
+class FieldRaw:
+    def __init__(self):
+        pass
+
 
 class Input():
-    def __init__(self,  name, values):
+    def __init__(self, name, value):
         self.name = name
-        self.values = values # List of InputRaw objects in the order they are in the block
+        self.value = value  # List of InputRaw objects in the order they are in the block
 
-        self.i_type = None
-
-        if self.value[-1].type == "shadow":
-            self.i_type = 1
-        elif "shadow" in [i.value for i in self.value]:
-            self.i_type = 3
-        else:
+        # There is a shadow, won't be hardcoded in the future (when I add reporters)
+        if value.usesSubstack:
             self.i_type = 2
-        
+        else:
+            self.i_type = 1
+
+        self.component2 = None
+
+        if self.value.useLink:
+            self.component2 = self.value.value
+        else:
+            if self.value.type == NUMBER:
+                number = int(self.value.value)
+
+                if self.value.rawType in ["DEGREES", "DIRECTION"]:
+                    self.component2 = [8, self.value.value]
+                else:
+                    if number > 0:
+                        if number % 1 == 0:
+                            self.component2 = [6, self.value.value]
+                        else:
+                            self.component2 = [5, self.value.value]
+                    else:
+                        if number % 1 == 0:
+                            self.component2 = [7, self.value.value]
+                        else:
+                            self.component2 = [4, self.value.value]
+
+            elif self.value.type == STRING:
+                self.component2 = [10, self.value.value]
+
+            # TODO: Variable, List, Broadcast, Colour
+
+    def json_constructor(self):
+        return [
+            self.i_type,
+            self.component2 if type(self.component2) in [list, None] else str(self.component2)
+        ]
+
 def new_id():
     global id
 

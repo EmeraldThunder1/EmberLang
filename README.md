@@ -8,4 +8,29 @@ Ember 2 will be packaged with a powerful addon system which allows for nearly en
 
 Please note that I am not accepting pull requests to this repo under any circumstance. Please create an issue if there is something you feel needs to be implemented.
 
+# Installation
+
+**Please note that installation requires git and python(although this may change in the future)**
+
+Go to the [releases](https://github.com/EmeraldThunder1/EmberLang/releases/) tab and install the correct file depending on your operating system (please note only Windows, Mac and Linux are supported).
+Run the file, ember will then be installed in that directory and added to the path.
+
+Ensure that everything is working properly by typing emberLang -v into a new terminal.
+
+At the moment you have to convert the out folder to an sb3 manually but this will change.
+
+# Changelogs
+
+## Pre-release v0.1.0-a
+
+First release!
+
+Features:
+- Sprites and the stage
+- Variables
+- Commands
+- Events
+
+Known issues:
+- None
 

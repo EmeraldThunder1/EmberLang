@@ -1,5 +1,5 @@
 import src.errors
-from tokens import *
+from src.tokens import *
 
 opcodes = {
     "events": {
@@ -548,7 +548,7 @@ opcodes = {
                     "name": "DURATION"
                 }
             ]
-        }
+        },
     },
 
     "sensing": {
@@ -622,6 +622,34 @@ opcodes = {
                 }
             ]
         }
+    },
+
+    "c_blocks": {
+        # All C blocks are also given the substack input
+        "repeat": {
+            "opcode": "control_repeat",
+            "inputs": [
+                {
+                    "type": "input",
+                    "name": "TIMES"
+                }
+            ]
+        },
+        "forever": {
+            "opcode": "control_forever",
+            "inputs": [
+
+            ]
+        },
+
+        "if": {
+            "opcode": "control_if",
+            "inputs": [
+                # FIXME: Boolean inputs?
+            ]
+        },
+
+        #  FIXME: Come up with some way to implement else cases
     }
 }
 
@@ -711,6 +739,11 @@ def filter_fields(field, value, current, backdrop, sprites):
                 value.value = value.value.replace("_", " ")
                 return value, None
 
+        case "COSTUME":
+            for costume in current.costumes:
+                if value.value == costume.name:
+                    return value, None
+
     return None, None
 
 
@@ -721,7 +754,7 @@ def filter_inputs(_i, value, current, backdrop, sprites):
     objects = sprites + active
 
     match _i:
-        case "VALUE" | "X" | "Y" | "STEPS" | "SECS" | "DX" | "DY" | "CHANGE" | "SIZE" | "NUM" | "VOLUME" | "DURATION":
+        case "VALUE" | "X" | "Y" | "STEPS" | "SECS" | "DX" | "DY" | "CHANGE" | "SIZE" | "NUM" | "VOLUME" | "DURATION"| "TIMES":
             if value.type == NUMBER:
                 return value
 

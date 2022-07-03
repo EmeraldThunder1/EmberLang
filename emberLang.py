@@ -12,19 +12,20 @@ with open(sys.argv[1] if not file else file, 'r') as f:
     
 
 code = """Stage {
-            global test = 'Hello World'
-            @on_flag () {
-                
-            }
+            
         }
         Sprite Test {
             var hello = 'Hello World'
             
             @on_flag () {
-                set_costume("logo.png")
-                hide()
+                set_costume('logo.png')
+                repeat(10) {
+                    set_position(20, 10)
+                }
+                say("Hello World!")
             }
-        }"""
+        }
+        """
 
 print("Tokenizing...")
 start = time.time()
